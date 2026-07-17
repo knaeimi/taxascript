@@ -29,23 +29,27 @@ public class TaxaAnalyzer {
 
             if (!file.getName().endsWith("_profile.txt")) continue; //skip files in the directory that aren't metaphlan taxonomic profiles
 
-            System.out.println(file.getName()); //Valid profile, so lets print which one it is for debugging
+            System.out.println("Computing taxa count of " + file.getName()); //Valid profile, so lets print which one it is for debugging
 
             try (BufferedReader reader = new BufferedReader(new FileReader(file))) {//sytax here: Pass rescource in try and it will close the reader for you at the end. Syntactic sugar.
                 
-                String line = reader.readLine();
+                String line;
 
-                while (line != null) {
-                    if (line.startsWith("#")) continue; //skip lines with comments
-                    taxaCount++; //every non comment line in the text file is a new taxon
+                while ((line = reader.readLine()) != null) {
+                    if (line.startsWith("#")) {
+                        continue;
+                    }
+
+                    taxaCount++;
                 }
-                System.out.println(file.getName() + "has a taxa count of: " + taxaCount);
+                System.out.println(file.getName() + " has a taxa count of: " + taxaCount);
             } 
+            
             catch (IOException e) { //try-catch syntax for debugging
                 e.printStackTrace();
             }
         }
     }
 
-    
+
 }
