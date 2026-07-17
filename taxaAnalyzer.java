@@ -6,18 +6,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class TaxaAnalyzer {
-
     private String directory;
-
-    //Take in a file directory of taxa profiles, 
 
     public TaxaAnalyzer(String directory){
         this.directory = directory;
     }
 
     /**
-     * 
-     * @return # of taxa found in each metaphlan text file in the passed directory
+     * Prints out taxa number for each profile in the passed directory
      */
     public void countTaxa(){
         Path directoryPath = Paths.get(directory); //convert directory string to a concrete file path
@@ -36,10 +32,9 @@ public class TaxaAnalyzer {
                 String line;
 
                 while ((line = reader.readLine()) != null) {
-                    if (line.startsWith("#")) {
-                        continue;
+                    if (line.startsWith("#")) { //each non comment line is technically new taxa.
+                        continue; //So we'll skip comments
                     }
-
                     taxaCount++;
                 }
                 System.out.println(file.getName() + " has a taxa count of: " + taxaCount);
@@ -50,6 +45,4 @@ public class TaxaAnalyzer {
             }
         }
     }
-
-
 }
