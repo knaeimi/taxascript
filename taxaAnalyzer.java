@@ -4,12 +4,14 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 
 public class TaxaAnalyzer {
     private String directory;
     private String rank;
     private char rankLetter;
     private String validRankChoices = " Kingdom, Phylum, Class, Order, Family, Genus, or Species ";
+    private HashSet<String> uniqueTaxa = new HashSet<String>(); //HashSet because we care about unique taxa
 
     public TaxaAnalyzer(String directory, String rank){
         this.directory = directory;
@@ -42,7 +44,7 @@ public class TaxaAnalyzer {
                     if (line.startsWith("#")) { //each non comment line is technically new taxa.
                         continue; //So we'll skip comments
                     }
-                    if (validTaxon()) taxaCount++;
+                    if (newTaxon()) taxaCount++;
                 }
                 System.out.println(file.getName() + " has a " + rank + " count of "+ taxaCount);
             } 
@@ -67,7 +69,7 @@ public class TaxaAnalyzer {
         return false;
     }
 
-    private boolean validTaxon(){ //main taxa parsing algorithm
+    private boolean newTaxon(){ //main taxa parsing algorithm
 
 
         
