@@ -16,7 +16,6 @@ public class TaxaAnalyzer {
     public TaxaAnalyzer(String directory, String rank){
         this.directory = directory;
         this.rank = rank;
-        rankLetter = determineRank();
     }
 
     /**
@@ -27,10 +26,6 @@ public class TaxaAnalyzer {
         File[] files = directoryPath.toFile().listFiles(); 
 
         for (File file : files) {
-
-            if (rankLetter == 's') System.out.println("Testing");
-
-            int taxaCount = 0; //each file in the directory has its own taxa count, so reset after processing each one
 
             if (!file.getName().endsWith("_profile.txt")) continue; //skip files in the directory that aren't metaphlan taxonomic profiles
 
@@ -44,18 +39,19 @@ public class TaxaAnalyzer {
                     if (line.startsWith("#")) { //each non comment line is technically new taxa.
                         continue; //So we'll skip comments
                     }
-                    if (newTaxon()) taxaCount++;
+                    addUniqueTaxa(line);
                 }
-                System.out.println(file.getName() + " has a " + rank + " count of "+ taxaCount);
+                System.out.println(file.getName() + " has a " + rank + " count of "+ uniqueTaxa.size());
+                uniqueTaxa.clear(); //each file needs a new set of taxa
             } 
             
-            catch (IOException e) { //try-catch syntax for debugging
+            catch (IOException e) { 
                 e.printStackTrace();
             }
         }
     }
 
-    private char determineRank(){
+    private char getRankLetter(){
         rank = rank.strip().toLowerCase();
         rankLetter = rank.charAt(0);
 
@@ -69,10 +65,15 @@ public class TaxaAnalyzer {
         return false;
     }
 
-    private boolean newTaxon(){ //main taxa parsing algorithm
-
-
+    private void addUniqueTaxa(String line){ //main taxa parsing algorithm
+       String clade = line.split("\t")[0]; //tabs seperate clades.. if we dont split by tab then we double count ("k_Bacteria" != " K_Bacteria")
+       String ranks[] = clade.split("\\|"); //two backslashes because we need to escape java and regex layers 
         
-        return true; //temp
+       for (String rank : ranks){
+        if (rank.charAt(0) == getRankLetter()) {
+            uniqueTaxa.add(rank); //guarenteed uniqueness so we'll only add this specific taxa once
+            break; //we found our chosen taxon rank on this line, no need to keep iterating through it
+        }
+       }
     }
 }
