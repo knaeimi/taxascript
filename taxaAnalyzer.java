@@ -4,6 +4,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.HashSet;
 
 public class TaxaAnalyzer {
@@ -11,27 +12,35 @@ public class TaxaAnalyzer {
     private String rank;
     private char rankLetter;
     private String validRankChoices = " Kingdom, Phylum, Class, Order, Family, Genus, or Species ";
-    private HashSet<String> uniqueTaxa = new HashSet<String>(); //HashSet because we care about unique taxa
+    private HashMap<String, HashSet<String>> sampleTaxa = new HashMap<String, HashSet<String>>(); //Maps each MetaPhlAn filename to the set of uniqueTaxa in that sample
 
-    public TaxaAnalyzer(String directory, String rank){
+    public TaxaAnalyzer(String directory, String rank){ //Next steps: Take in directoryA and directoryB. 
         this.directory = directory;
         this.rank = rank;
     }
 
     /**
-     * Prints out taxa number for each profile in the passed directory
+     * For debugging.
      */
-    public void countTaxa(){ //Takes in rank (Kingdom, Phylum, Class, Order, Family, Genus, or Species)
-        Path directoryPath = Paths.get(directory); //convert directory string to a concrete file path
+    public void printSampleTaxa(){
+        for (String sample : sampleTaxa.keySet()) {
+            HashSet<String> uniqueTaxa = sampleTaxa.get(sample);
+            System.out.println("Sample: " + sample + "     Unique " + rank + ": " + String.join(",", uniqueTaxa) + "     Count: " + uniqueTaxa.size());
+        }
+    }
+
+    public void storeTaxa(){ //Will run for directoryA and directoryB.
+        Path directoryPath = Paths.get(directory); 
         File[] files = directoryPath.toFile().listFiles(); 
 
         for (File file : files) {
+            String fileName = file.getName();
 
-            if (!file.getName().endsWith("_profile.txt")) continue; //skip files in the directory that aren't metaphlan taxonomic profiles
+            if (!fileName.endsWith("_profile.txt")) continue; //skip files in the directory that aren't metaphlan taxonomic profiles
 
-            System.out.println("Computing " + rank + " count of " + file.getName()); //Valid profile, so lets print which one it is for debugging
+            HashSet<String> uniqueTaxa = new HashSet<String>(); //create hashset after fileName check so we don't create useless hashsets for random files
 
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {//sytax here: Pass rescource in try and it will close the reader for you at the end. Syntactic sugar.
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                 
                 String line;
 
@@ -39,15 +48,14 @@ public class TaxaAnalyzer {
                     if (line.startsWith("#")) { //each non comment line is technically new taxa.
                         continue; //So we'll skip comments
                     }
-                    addUniqueTaxa(line);
+                    addUniqueTaxa(line, uniqueTaxa);
                 }
-                System.out.println(file.getName() + " has a " + rank + " count of "+ uniqueTaxa.size() + ", and those unique " + rank + " are: " + String.join(", ", uniqueTaxa));
-                uniqueTaxa.clear(); //each file needs a new set of taxa
             } 
             
             catch (IOException e) { 
                 e.printStackTrace();
             }
+            sampleTaxa.put(fileName,uniqueTaxa); //outside try-catch so an IOException doesn't affect us being able to store results
         }
     }
 
@@ -59,20 +67,24 @@ public class TaxaAnalyzer {
         else throw new IllegalArgumentException(rank + " is not a valid rank! Ranks: " + validRankChoices);
     }
 
-    private void addUniqueTaxa(String line){ //main taxa parsing algorithm
-       String clade = line.split("\t")[0]; //tabs seperate clades.. if we dont split by tab then we double count ("k_Bacteria" != " K_Bacteria")
-       String ranks[] = clade.split("\\|"); //two backslashes because we need to escape java and regex layers 
+    private void addUniqueTaxa(String line, HashSet<String> uniqueTaxa){ //taxa parsing algorithm
+       String clade = line.split("\t")[0]; 
+       String ranks[] = clade.split("\\|"); 
         
        for (String rank : ranks){
         if (rank.charAt(0) == getRankLetter()) {
-            uniqueTaxa.add(rank); //guarenteed uniqueness so we'll only add this specific taxa once
-            break; //we found our chosen taxon rank on this line, no need to keep iterating through it
+            uniqueTaxa.add(rank); 
+            break; //we found our chosen taxon rank on this line so we back off
         }
        }
     }
 
     private boolean validRank(){
         return (isKingdom()|| isPhylum() || isClass() || isOrder() || isFamily() || isGenus() || isSpecies());
+    }
+
+    private void findIntersection(){
+        //Find common taxa between directoryA and directoryB
     }
 
     private boolean isKingdom(){
@@ -132,10 +144,11 @@ public class TaxaAnalyzer {
     }
 
     public static void main(String[] args) {
-        String fileDirectory = args[0]; //test directory, pass whichever needs to be analyzed  "/Users/knaeimi/Documents/GitHub/MetaPhlAn/metaphlan" for command line
-        String taxonRank = args[1]; //pass Kingdom, Phylum, Class, Order, Family, Genus, or Species (case insensitive)
+        String fileDirectory = "/Users/knaeimi/Documents/GitHub/MetaPhlAn/metaphlan"; //For now am not going to use command line input
+        String taxonRank = "Phylum";
         
         TaxaAnalyzer taxaAnalyzer = new TaxaAnalyzer(fileDirectory, taxonRank);
-        taxaAnalyzer.countTaxa();
+        taxaAnalyzer.storeTaxa();
+        taxaAnalyzer.printSampleTaxa();
     }
 }
