@@ -41,7 +41,7 @@ public class TaxaAnalyzer {
                     }
                     addUniqueTaxa(line);
                 }
-                System.out.println(file.getName() + " has a " + rank + " count of "+ uniqueTaxa.size());
+                System.out.println(file.getName() + " has a " + rank + " count of "+ uniqueTaxa.size() + ", and those unique " + rank + " are: " + String.join(", ", uniqueTaxa));
                 uniqueTaxa.clear(); //each file needs a new set of taxa
             } 
             
@@ -55,14 +55,8 @@ public class TaxaAnalyzer {
         rank = rank.strip().toLowerCase();
         rankLetter = rank.charAt(0);
 
-        if (validRank(rankLetter)) return rankLetter;
+        if (validRank()) return rankLetter;
         else throw new IllegalArgumentException(rank + " is not a valid rank! Ranks: " + validRankChoices);
-    }
-
-    private boolean validRank(char rankLetter){
-        if (rankLetter == 'k' || rankLetter == 'p' || rankLetter == 'c' || rankLetter == 'o' || 
-        rankLetter == 'f' || rankLetter == 'g' || rankLetter == 's') return true;
-        return false;
     }
 
     private void addUniqueTaxa(String line){ //main taxa parsing algorithm
@@ -75,5 +69,65 @@ public class TaxaAnalyzer {
             break; //we found our chosen taxon rank on this line, no need to keep iterating through it
         }
        }
+    }
+
+    private boolean validRank(){
+        return (isKingdom()|| isPhylum() || isClass() || isOrder() || isFamily() || isGenus() || isSpecies());
+    }
+
+    private boolean isKingdom(){
+        if (rankLetter == 'k'){
+            rank = "Kingdom";
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isPhylum(){
+        if (rankLetter == 'p'){
+            rank = "Phylum";
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isClass(){
+        if (rankLetter == 'c'){
+            rank = "Class";
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isOrder(){
+        if (rankLetter == 'o'){
+            rank = "Order";
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isFamily(){
+        if (rankLetter == 'f'){
+            rank = "Family";
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isGenus(){
+        if (rankLetter == 'g'){
+            rank = "Genus";
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isSpecies(){
+        if (rankLetter == 's'){
+            rank = "Species";
+            return true;
+        }
+        return false;
     }
 }
