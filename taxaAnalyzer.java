@@ -8,14 +8,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 public class TaxaAnalyzer {
-    private String directory;
+    private String directoryA;
+    private String directoryB;
     private String rank;
     private char rankLetter;
     private String validRankChoices = " Kingdom, Phylum, Class, Order, Family, Genus, or Species ";
     private HashMap<String, HashSet<String>> sampleTaxa = new HashMap<String, HashSet<String>>(); //Maps each MetaPhlAn filename to the set of uniqueTaxa in that sample
 
-    public TaxaAnalyzer(String directory, String rank){ //Next steps: Take in directoryA and directoryB. 
-        this.directory = directory;
+    public TaxaAnalyzer(String directoryA, String directoryB, String rank){ //Next steps: Take in directoryA and directoryB. Map each untrimmed to its trimmed counterpart, find intersection.
+        this.directoryA = directoryA;
+        this.directoryB = directoryB;
         this.rank = rank;
     }
 
@@ -30,10 +32,17 @@ public class TaxaAnalyzer {
     }
 
     public void storeTaxa(){ //Will run for directoryA and directoryB.
-        Path directoryPath = Paths.get(directory); 
-        File[] files = directoryPath.toFile().listFiles(); 
+        String [] directories = {directoryA, directoryB};
 
-        for (File file : files) {
+        for (String directory : directories){
+            Path directoryPath = Paths.get(directory); 
+            File[] files = directoryPath.toFile().listFiles(); 
+            processTaxa(files);
+        }
+    }
+
+    private void processTaxa(File[] directoryFiles){
+        for (File file : directoryFiles) {
             String fileName = file.getName();
 
             if (!fileName.endsWith("_profile.txt")) continue; //skip files in the directory that aren't metaphlan taxonomic profiles
@@ -145,9 +154,10 @@ public class TaxaAnalyzer {
 
     public static void main(String[] args) {
         String fileDirectory = "/Users/knaeimi/Documents/GitHub/MetaPhlAn/metaphlan"; //For now am not going to use command line input
+        String tempDirectory = "";
         String taxonRank = "Phylum";
         
-        TaxaAnalyzer taxaAnalyzer = new TaxaAnalyzer(fileDirectory, taxonRank);
+        TaxaAnalyzer taxaAnalyzer = new TaxaAnalyzer(fileDirectory, tempDirectory, taxonRank);
         taxaAnalyzer.storeTaxa();
         taxaAnalyzer.printSampleTaxa();
     }
