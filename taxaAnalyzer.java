@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 public class TaxaAnalyzer {
     private String directoryA;
@@ -15,28 +16,14 @@ public class TaxaAnalyzer {
     private String validRankChoices = " Kingdom, Phylum, Class, Order, Family, Genus, or Species ";
     private HashMap<String, HashSet<String>> untrimmedSamples = new HashMap<String, HashSet<String>>(); //Map sample id to unique taxa in it's untrimmed file
     private HashMap<String, HashSet<String>> trimmedSamples = new HashMap<String, HashSet<String>>(); //Map sample id to unique taxa in it's trimmed file
+    private static final int ONLY_UNTRIMMED = 0;
+    private static final int ONLY_TRIMMED = 1;
+    private static final int COMMON = 2;
 
-    public TaxaAnalyzer(String directoryA, String directoryB, String rank){ //Next steps: Take in directoryA and directoryB. Map each untrimmed to its trimmed counterpart, find intersection.
+    public TaxaAnalyzer(String directoryA, String directoryB, String rank){ 
         this.directoryA = directoryA;
         this.directoryB = directoryB;
         this.rank = rank;
-    }
-
-    /**
-     * For debugging.
-     */
-    public void printSampleTaxa(){
-        for (String sampleID : untrimmedSamples.keySet()) { //Not neccesarily same size as trimmed set, safer to loop over untrimmed
-            HashSet<String> uniqueUntrimmedTaxa = untrimmedSamples.get(sampleID);
-            HashSet<String> uniqueTrimmedTaxa = trimmedSamples.get(sampleID);
-            System.out.println("Sample: " + sampleID + "     Unique Untrimmed " + rank + ": " + String.join(",", uniqueUntrimmedTaxa) + "     Count: " + uniqueUntrimmedTaxa.size());
-
-            if (uniqueTrimmedTaxa == null) {
-                System.out.println("Sample: " + sampleID + " has no trimmed counterpart");
-                continue;
-            }
-            System.out.println("Sample: " + sampleID + "     Unique Trimmed " + rank + ": " + String.join(",", uniqueTrimmedTaxa) + "     Count: " + uniqueTrimmedTaxa.size());
-        }
     }
 
     public void storeTaxa(){ 
@@ -104,8 +91,50 @@ public class TaxaAnalyzer {
         return (isKingdom()|| isPhylum() || isClass() || isOrder() || isFamily() || isGenus() || isSpecies());
     }
 
-    private void compareSamples(){
-        //Find common taxa between directoryA and directoryB
+    private HashMap<String, List<HashSet<String>>> getUniqueSampleMap(){
+        HashMap<String, List<HashSet<String>>> uniqueSampleMap = new HashMap<String, List<HashSet<String>>>();
+
+        for (String sampleID : untrimmedSamples.keySet()) {
+            HashSet<String> untrimmed = untrimmedSamples.get(sampleID); 
+            HashSet<String> trimmed = trimmedSamples.get(sampleID);
+            
+            if (trimmed == null) continue; //if matching sample doesn't exist in second directory, skip. This will result in a null uniqueSets at this sampleID though so we'll catch that in the print method.
+
+            HashSet<String> onlyInUntrimmed = new HashSet<String>(untrimmed); 
+            HashSet<String> onlyInTrimmed = new HashSet<String>(trimmed); 
+            HashSet<String> inBoth = new HashSet<String>(untrimmed); 
+            
+            //HashSets allow simple set operations
+            onlyInUntrimmed.removeAll(trimmed); // untrimmed \ trimmed 
+            onlyInTrimmed.removeAll(untrimmed); // trimmed \ untrimmed
+            inBoth.retainAll(trimmed); // untrimmed ∩ trimmed
+            
+            List<HashSet<String>> uniqueSets = List.of(onlyInUntrimmed,onlyInTrimmed,inBoth); //Yes we are hardcoding the indices for now
+            uniqueSampleMap.put(sampleID, uniqueSets);
+        }
+        return uniqueSampleMap;
+    }
+
+    private void printSampleData(){ 
+        HashMap<String, List<HashSet<String>>> uniqueSampleMap = getUniqueSampleMap();
+
+        for (String sampleID : untrimmedSamples.keySet()) { //Not neccesarily same size as trimmed set, safer to loop over untrimmed
+            List<HashSet<String>> uniqueSets = uniqueSampleMap.get(sampleID);
+
+            if (uniqueSets == null) { //if there wasn't a matching trimmed sample, we continued in getUniqueSampleMap(), so there isn't a uniqueSets list.
+                System.out.println("Sample: " + sampleID + " has no trimmed counterpart");
+                continue;
+            }
+
+            HashSet<String> onlyInUntrimmedTaxa = uniqueSets.get(ONLY_UNTRIMMED);
+            HashSet<String> onlyInTrimmedTaxa = uniqueSets.get(ONLY_TRIMMED);
+            HashSet<String> commonTaxa = uniqueSets.get(COMMON);
+
+            System.out.println("\nSample: " + sampleID);
+            System.out.println("Only in Untrimmed " + rank + ": " + String.join(", ", onlyInUntrimmedTaxa) + "     Count: " + onlyInUntrimmedTaxa.size());
+            System.out.println("Only in Trimmed " + rank + ": " + String.join(", ", onlyInTrimmedTaxa) + "     Count: " + onlyInTrimmedTaxa.size());
+            System.out.println("Common " + rank + ": " + String.join(", ", commonTaxa) + "     Count: " + commonTaxa.size());
+        }
     }
 
     private boolean isKingdom(){
@@ -165,12 +194,12 @@ public class TaxaAnalyzer {
     }
 
     public static void main(String[] args) {
-        String fileDirectory = "/Users/knaeimi/Documents/GitHub/MetaPhlAn/metaphlan"; //For now am not going to use command line input
+        String fileDirectory = "/Users/knaeimi/Documents/GitHub/MetaPhlAn/metaphlan"; //For now not going to use command line                                                                                                                 
         String tempDirectory = "";
         String taxonRank = "Phylum";
         
         TaxaAnalyzer taxaAnalyzer = new TaxaAnalyzer(fileDirectory, tempDirectory, taxonRank);
         taxaAnalyzer.storeTaxa();
-        taxaAnalyzer.printSampleTaxa();
+        taxaAnalyzer.printSampleData();
     }
 }
