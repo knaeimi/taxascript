@@ -13,7 +13,8 @@ public class TaxaAnalyzer {
     private String rank;
     private char rankLetter;
     private String validRankChoices = " Kingdom, Phylum, Class, Order, Family, Genus, or Species ";
-    private HashMap<String, HashSet<String>> sampleTaxa = new HashMap<String, HashSet<String>>(); //Maps each MetaPhlAn filename to the set of uniqueTaxa in that sample
+    private HashMap<String, HashSet<String>> untrimmedSamples = new HashMap<String, HashSet<String>>(); //Map sample id to unique taxa in it's untrimmed file
+    private HashMap<String, HashSet<String>> trimmedSamples = new HashMap<String, HashSet<String>>(); //Map sample id to unique taxa in it's trimmed file
 
     public TaxaAnalyzer(String directoryA, String directoryB, String rank){ //Next steps: Take in directoryA and directoryB. Map each untrimmed to its trimmed counterpart, find intersection.
         this.directoryA = directoryA;
@@ -25,13 +26,20 @@ public class TaxaAnalyzer {
      * For debugging.
      */
     public void printSampleTaxa(){
-        for (String sample : sampleTaxa.keySet()) {
-            HashSet<String> uniqueTaxa = sampleTaxa.get(sample);
-            System.out.println("Sample: " + sample + "     Unique " + rank + ": " + String.join(",", uniqueTaxa) + "     Count: " + uniqueTaxa.size());
+        for (String sampleID : untrimmedSamples.keySet()) { //Not neccesarily same size as trimmed set, safer to loop over untrimmed
+            HashSet<String> uniqueUntrimmedTaxa = untrimmedSamples.get(sampleID);
+            HashSet<String> uniqueTrimmedTaxa = trimmedSamples.get(sampleID);
+            System.out.println("Sample: " + sampleID + "     Unique Untrimmed " + rank + ": " + String.join(",", uniqueUntrimmedTaxa) + "     Count: " + uniqueUntrimmedTaxa.size());
+
+            if (uniqueTrimmedTaxa == null) {
+                System.out.println("Sample: " + sampleID + " has no trimmed counterpart");
+                continue;
+            }
+            System.out.println("Sample: " + sampleID + "     Unique Trimmed " + rank + ": " + String.join(",", uniqueTrimmedTaxa) + "     Count: " + uniqueTrimmedTaxa.size());
         }
     }
 
-    public void storeTaxa(){ //Will run for directoryA and directoryB.
+    public void storeTaxa(){ 
         String [] directories = {directoryA, directoryB};
 
         for (String directory : directories){
@@ -46,6 +54,8 @@ public class TaxaAnalyzer {
             String fileName = file.getName();
 
             if (!fileName.endsWith("_profile.txt")) continue; //skip files in the directory that aren't metaphlan taxonomic profiles
+
+            String sampleID = fileName.replace("_trimmed_profile.txt", "").replace("_profile.txt", ""); //same ID for trimmed and untrimmed version 
 
             HashSet<String> uniqueTaxa = new HashSet<String>(); //create hashset after fileName check so we don't create useless hashsets for random files
 
@@ -64,7 +74,9 @@ public class TaxaAnalyzer {
             catch (IOException e) { 
                 e.printStackTrace();
             }
-            sampleTaxa.put(fileName,uniqueTaxa); //outside try-catch so an IOException doesn't affect us being able to store results
+
+            if (fileName.endsWith("_trimmed_profile.txt")) trimmedSamples.put(sampleID, uniqueTaxa);
+            else untrimmedSamples.put(sampleID, uniqueTaxa);
         }
     }
 
@@ -92,7 +104,7 @@ public class TaxaAnalyzer {
         return (isKingdom()|| isPhylum() || isClass() || isOrder() || isFamily() || isGenus() || isSpecies());
     }
 
-    private void findIntersection(){
+    private void compareSamples(){
         //Find common taxa between directoryA and directoryB
     }
 
