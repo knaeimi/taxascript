@@ -194,9 +194,9 @@ public class TaxaAnalyzer {
     }
 
     public static void main(String[] args) {
-        String fileDirectory = "/Users/knaeimi/Documents/GitHub/MetaPhlAn/metaphlan"; //For now not going to use command line                                                                                                                 
-        String tempDirectory = "";
-        String taxonRank = "Phylum";
+        String fileDirectory = args[0]; //For now not going to use command line                                                                                                                 
+        String tempDirectory = args[1];
+        String taxonRank = args[2];
         
         TaxaAnalyzer taxaAnalyzer = new TaxaAnalyzer(fileDirectory, tempDirectory, taxonRank);
         taxaAnalyzer.storeTaxa();
