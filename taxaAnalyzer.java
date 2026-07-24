@@ -117,6 +117,11 @@ public class TaxaAnalyzer {
 
     private void printSampleData(){ 
         HashMap<String, List<HashSet<String>>> uniqueSampleMap = getUniqueSampleMap();
+        int totalUntrimmed = 0;
+        int totalTrimmed = 0;
+        int totalCommon = 0;
+
+        System.out.println("---------------------SAMPLE LEVEL ANALYSIS---------------------");
 
         for (String sampleID : untrimmedSamples.keySet()) { //Not neccesarily same size as trimmed set, safer to loop over untrimmed
             List<HashSet<String>> uniqueSets = uniqueSampleMap.get(sampleID);
@@ -125,16 +130,28 @@ public class TaxaAnalyzer {
                 System.out.println("Sample: " + sampleID + " has no trimmed counterpart");
                 continue;
             }
-
             HashSet<String> onlyInUntrimmedTaxa = uniqueSets.get(ONLY_UNTRIMMED);
             HashSet<String> onlyInTrimmedTaxa = uniqueSets.get(ONLY_TRIMMED);
             HashSet<String> commonTaxa = uniqueSets.get(COMMON);
 
+            int untrimmedSize = onlyInUntrimmedTaxa.size();
+            int trimmedSize = onlyInTrimmedTaxa.size();
+            int commonSize = commonTaxa.size();
+
             System.out.println("\nSample: " + sampleID);
-            System.out.println("Only in Untrimmed " + rank + ": " + String.join(", ", onlyInUntrimmedTaxa) + "     Count: " + onlyInUntrimmedTaxa.size());
-            System.out.println("Only in Trimmed " + rank + ": " + String.join(", ", onlyInTrimmedTaxa) + "     Count: " + onlyInTrimmedTaxa.size());
-            System.out.println("Common " + rank + ": " + String.join(", ", commonTaxa) + "     Count: " + commonTaxa.size());
+            System.out.println(rank + " Only in Untrimmed : " + String.join(", ", onlyInUntrimmedTaxa) + "     Count: " + untrimmedSize);
+            System.out.println(rank + " Only in Trimmed : " + String.join(", ", onlyInTrimmedTaxa) + "     Count: " + trimmedSize);
+            System.out.println("Common " + rank + " : " + String.join(", ", commonTaxa) + "     Count: " + commonSize);
+
+            totalUntrimmed += untrimmedSize + commonSize;  //ven diagram includes common for both 
+            totalTrimmed += trimmedSize + commonSize;
+            totalCommon += commonSize;
         }
+        System.out.println("---------------------OVERALL ANALYSIS---------------------");
+        System.out.println("\nTotal " + rank + " in Untrimmed : " + totalUntrimmed);
+        System.out.println("Total " + rank + " in Trimmed : " + totalTrimmed);
+        System.out.println("Total Common " + rank + " : " + totalCommon);
+        System.out.println("Net Change After Trimming : " + (totalTrimmed - totalUntrimmed));
     }
 
     private boolean isKingdom(){
